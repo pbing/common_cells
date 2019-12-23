@@ -17,28 +17,28 @@
 /// the paths async_req, async_ack, async_data.
 /* verilator lint_off DECLFILENAME */
 module cdc_2phase #(
-  parameter type T = logic
+  parameter width = 1
 )(
   input  logic src_rst_ni,
   input  logic src_clk_i,
-  input  T     src_data_i,
+  input  logic[width-1:0] src_data_i,
   input  logic src_valid_i,
   output logic src_ready_o,
 
   input  logic dst_rst_ni,
   input  logic dst_clk_i,
-  output T     dst_data_o,
+  output logic[width-1:0] dst_data_o,
   output logic dst_valid_o,
   input  logic dst_ready_i
 );
 
   // Asynchronous handshake signals.
-  (* dont_touch = "true" *) logic async_req;
-  (* dont_touch = "true" *) logic async_ack;
-  (* dont_touch = "true" *) T async_data;
+  logic async_req;
+  logic async_ack;
+  logic[width-1:0] async_data;
 
   // The sender in the source domain.
-  cdc_2phase_src #(.T(T)) i_src (
+  cdc_2phase_src #(.width(width)) i_src (
     .rst_ni       ( src_rst_ni  ),
     .clk_i        ( src_clk_i   ),
     .data_i       ( src_data_i  ),
@@ -50,7 +50,7 @@ module cdc_2phase #(
   );
 
   // The receiver in the destination domain.
-  cdc_2phase_dst #(.T(T)) i_dst (
+  cdc_2phase_dst #(.width(width)) i_dst (
     .rst_ni       ( dst_rst_ni  ),
     .clk_i        ( dst_clk_i   ),
     .data_o       ( dst_data_o  ),
@@ -66,22 +66,20 @@ endmodule
 
 /// Half of the two-phase clock domain crossing located in the source domain.
 module cdc_2phase_src #(
-  parameter type T = logic
+  parameter width = 1
 )(
   input  logic rst_ni,
   input  logic clk_i,
-  input  T     data_i,
+  input  logic[width-1:0] data_i,
   input  logic valid_i,
   output logic ready_o,
   output logic async_req_o,
   input  logic async_ack_i,
-  output T     async_data_o
+  output logic[width-1:0] async_data_o
 );
 
-  (* dont_touch = "true" *)
   logic req_src_q, ack_src_q, ack_q;
-  (* dont_touch = "true" *)
-  T data_src_q;
+  logic[width-1:0] data_src_q;
 
   // The req_src and data_src registers change when a new data item is accepted.
   always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -116,23 +114,20 @@ endmodule
 /// Half of the two-phase clock domain crossing located in the destination
 /// domain.
 module cdc_2phase_dst #(
-  parameter type T = logic
+  parameter width = 1
 )(
   input  logic rst_ni,
   input  logic clk_i,
-  output T     data_o,
+  output logic[width-1:0] data_o,
   output logic valid_o,
   input  logic ready_i,
   input  logic async_req_i,
   output logic async_ack_o,
-  input  T     async_data_i
+  input  logic[width-1:0] async_data_i
 );
 
-  (* dont_touch = "true" *)
-  (* async_reg = "true" *)
   logic req_dst_q, req_q0, req_q1, ack_dst_q;
-  (* dont_touch = "true" *)
-  T data_dst_q;
+  logic[width-1:0] data_dst_q;
 
   // The ack_dst register changes when a new data item is accepted.
   always_ff @(posedge clk_i or negedge rst_ni) begin
